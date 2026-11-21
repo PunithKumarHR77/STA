@@ -2,10 +2,12 @@ const crypto = require("crypto");
 
 const hashPassword = (password) => crypto.createHash("sha256").update(password).digest("hex");
 
-function createMemoryStore() {
+function createMemoryStore({ seedDemoUser = process.env.NODE_ENV !== "production" } = {}) {
   const users = new Map();
   const sessions = new Map();
-  users.set("test@example.com", { email: "test@example.com", passwordHash: hashPassword("Test@1234"), name: "Test User" });
+  if (seedDemoUser) {
+    users.set("test@example.com", { email: "test@example.com", passwordHash: hashPassword("Test@1234"), name: "Test User" });
+  }
   return {
     findUser: (email) => users.get(email),
     createUser({ email, password, name }) {

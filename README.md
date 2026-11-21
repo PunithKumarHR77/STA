@@ -18,9 +18,11 @@ the same while making the app easier to extend or replace the in-memory store.
 
 Then open http://localhost:3000 in a browser.
 
-A ready-to-use account is seeded automatically:
+For local development, a ready-to-use account is seeded automatically:
 - Email: `test@example.com`
 - Password: `Test@1234`
+
+The demo account is not created when `NODE_ENV=production`.
 
 ## Pages (for manual / Selenium testing)
 
@@ -60,6 +62,19 @@ exercise identical backend logic — useful for comparing manual/Selenium result
 against direct API results.
 
 ## Notes
-- Data is in-memory only — restarting the server resets everything back to just the seeded test user.
+- Data is in-memory only — restarting the local development server reseeds the demo account, while production restarts clear all accounts and sessions.
 - Sign-up passwords must be between 8 and 200 characters.
 - No `.env` or external service needed to get started.
+
+## Deploy to Render
+
+This project is a Node.js/Express web service that also serves its frontend, so
+deploy it as a Render **Web Service**. The root `render.yaml` sets the build
+command (`npm ci`), start command (`npm start`), production mode, and HTTP health
+check (`/api/health`). No separate frontend service, database, CORS setting, or
+secret environment variable is required for the current features.
+
+User accounts and login sessions are stored in memory. They reset whenever the
+service restarts or redeploys, and multiple instances would not share them. The
+cart is stored in each user's browser. Use a persistent database before relying
+on signup accounts as durable production data.
