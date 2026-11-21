@@ -1,0 +1,318 @@
+
+{
+  "info": {
+    "name": "Simple Login App API",
+    "description": "API tests for signup, login, me, logout, health on the Simple Login App.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/health",
+          "host": ["{{base_url}}"],
+          "path": ["api", "health"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Server reports up', function () {",
+              "    const data = pm.response.json();",
+              "    pm.expect(data.ok).to.be.true;",
+              "    pm.expect(data.status).to.eql('up');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Signup - new user",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Postman Tester\",\n  \"email\": \"{{test_email}}\",\n  \"password\": \"{{test_password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/signup",
+          "host": ["{{base_url}}"],
+          "path": ["api", "signup"]
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// Generate a unique email per run so signup never collides with an existing account",
+              "const suffix = Math.random().toString(36).substring(2, 8);",
+              "pm.collectionVariables.set('test_email', `postman_${suffix}@example.com`);",
+              "pm.collectionVariables.set('test_password', 'Test@1234');"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 201', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Signup succeeded', function () {",
+              "    const data = pm.response.json();",
+              "    pm.expect(data.ok).to.be.true;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Signup - duplicate email (should fail)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Postman Tester\",\n  \"email\": \"{{test_email}}\",\n  \"password\": \"{{test_password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/signup",
+          "host": ["{{base_url}}"],
+          "path": ["api", "signup"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 409 (conflict)', function () {",
+              "    pm.response.to.have.status(409);",
+              "});",
+              "",
+              "pm.test('Error indicates user already exists', function () {",
+              "    const data = pm.response.json();",
+              "    pm.expect(data.ok).to.be.false;",
+              "    pm.expect(data.error.toLowerCase()).to.include('already exists');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login - valid credentials",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"{{test_password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/login",
+          "host": ["{{base_url}}"],
+          "path": ["api", "login"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Login returns a token', function () {",
+              "    const data = pm.response.json();",
+              "    pm.expect(data.ok).to.be.true;",
+              "    pm.expect(data.token).to.be.a('string').and.not.empty;",
+              "    pm.collectionVariables.set('auth_token', data.token);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login - wrong password (should fail)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"WrongPassword1\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/login",
+          "host": ["{{base_url}}"],
+          "path": ["api", "login"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 401', function () {",
+              "    pm.response.to.have.status(401);",
+              "});",
+              "",
+              "pm.test('Error indicates invalid credentials', function () {",
+              "    const data = pm.response.json();",
+              "    pm.expect(data.ok).to.be.false;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Me - with valid token",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/me",
+          "host": ["{{base_url}}"],
+          "path": ["api", "me"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Returns the logged-in user', function () {",
+              "    const data = pm.response.json();",
+              "    pm.expect(data.ok).to.be.true;",
+              "    pm.expect(data.email).to.eql(pm.collectionVariables.get('test_email'));",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Me - no token (should fail)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/me",
+          "host": ["{{base_url}}"],
+          "path": ["api", "me"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 401', function () {",
+              "    pm.response.to.have.status(401);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Logout",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/logout",
+          "host": ["{{base_url}}"],
+          "path": ["api", "logout"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Me - after logout (token should be invalid)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/me",
+          "host": ["{{base_url}}"],
+          "path": ["api", "me"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 401 (session ended)', function () {",
+              "    pm.response.to.have.status(401);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "https://new-one-lc9n.onrender.com" },
+    { "key": "test_email", "value": "" },
+    { "key": "test_password", "value": "" },
+    { "key": "auth_token", "value": "" }
+  ]
+}

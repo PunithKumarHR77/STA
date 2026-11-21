@@ -1,0 +1,210 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Shop | Good Things</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/home.html">Good Things</a>
+    <nav class="topbar-actions" aria-label="Account">
+      <a class="cart-link" href="#cart">Your cart <span class="cart-count" id="cartCount">0</span></a>
+      <button class="button button-light" id="logoutBtn" type="button">Sign out</button>
+    </nav>
+  </header>
+  <main class="page-shell">
+    <section class="welcome" aria-labelledby="welcomeTitle">
+      <div>
+        <h1 id="welcomeTitle">A few good things</h1>
+        <p id="welcomeMsg">Loading your account…</p>
+      </div>
+    </section>
+    <div class="shop-layout">
+      <section aria-labelledby="itemsTitle">
+        <h2 class="section-heading" id="itemsTitle">Everyday picks</h2>
+        <div class="shop-tools">
+          <label class="search-wrap" for="productSearch">
+            <span class="search-icon" aria-hidden="true">⌕</span>
+            <input id="productSearch" type="search" placeholder="Search products" autocomplete="off" />
+          </label>
+          <nav class="category-nav" id="categoryNav" aria-label="Shop by category"></nav>
+        </div>
+        <p class="results-label" id="resultsLabel" aria-live="polite"></p>
+        <div class="product-grid" id="productGrid"></div>
+      </section>
+      <aside class="cart-card" id="cart" aria-labelledby="cartTitle">
+        <h2 id="cartTitle">Your cart</h2>
+        <div class="cart-items" id="cartItems" aria-live="polite"></div>
+        <div class="cart-total"><span>Total</span><span id="cartTotal">$0.00</span></div>
+        <p class="cart-note">Your cart stays on this device while you browse.</p>
+      </aside>
+    </div>
+  </main>
+  <script>
+    const categories = [
+      { id: "all", name: "All items" },
+      { id: "medicines", name: "Medicines & Medical Items" },
+      { id: "hygiene", name: "Hygiene & Personal Care" },
+      { id: "clothing", name: "Clothing & Fashion" },
+      { id: "groceries", name: "Groceries" },
+    ];
+    const products = [
+      { id: "mug", name: "Everyday mug", description: "A comfortable cup for your morning tea or coffee.", price: 12, icon: "☕", category: "existing" },
+      { id: "tote", name: "Cotton tote", description: "A sturdy, reusable bag for everyday errands.", price: 18, icon: "👜", category: "existing" },
+      { id: "notebook", name: "Pocket notebook", description: "A simple place for lists, notes and ideas.", price: 8, icon: "📓", category: "existing" },
+      { id: "bottle", name: "Water bottle", description: "Keep a drink close by, at home or on the go.", price: 16, icon: "🫙", category: "existing" },
+      { id: "first-aid-kit", name: "First aid kit", description: "Everyday essentials for small cuts and scrapes.", price: 14, image: "/images/products/medicine.svg", category: "medicines" },
+      { id: "digital-thermometer", name: "Digital thermometer", description: "A clear, easy-to-read home thermometer.", price: 11, image: "/images/products/medicine.svg", category: "medicines" },
+      { id: "bandages", name: "Adhesive bandages", description: "A handy pack of assorted everyday bandages.", price: 5, image: "/images/products/medicine.svg", category: "medicines" },
+      { id: "ice-pack", name: "Reusable cool pack", description: "A reusable cool pack for home first aid.", price: 9, image: "/images/products/medicine.svg", category: "medicines" },
+      { id: "hand-soap", name: "Gentle hand soap", description: "A mild, everyday hand wash for the home.", price: 6, image: "/images/products/hygiene.svg", category: "hygiene" },
+      { id: "toothbrush-set", name: "Toothbrush set", description: "A simple two-brush set for daily care.", price: 7, image: "/images/products/hygiene.svg", category: "hygiene" },
+      { id: "care-lotion", name: "Daily care lotion", description: "A light, fragrance-free moisturizer.", price: 10, image: "/images/products/hygiene.svg", category: "hygiene" },
+      { id: "cotton-towels", name: "Cotton face towels", description: "A soft set of reusable cotton face towels.", price: 12, image: "/images/products/hygiene.svg", category: "hygiene" },
+      { id: "everyday-tee", name: "Everyday T-shirt", description: "A comfortable cotton tee for daily wear.", price: 22, image: "/images/products/clothing.svg", category: "clothing" },
+      { id: "warm-socks", name: "Everyday socks", description: "A soft, breathable pair for all-day comfort.", price: 9, image: "/images/products/clothing.svg", category: "clothing" },
+      { id: "cotton-scarf", name: "Cotton scarf", description: "A light layer for cooler days and evenings.", price: 17, image: "/images/products/clothing.svg", category: "clothing" },
+      { id: "canvas-cap", name: "Canvas cap", description: "A simple adjustable cap for sunny days.", price: 15, image: "/images/products/clothing.svg", category: "clothing" },
+      { id: "oats", name: "Rolled oats", description: "A pantry staple for breakfast and baking.", price: 5, image: "/images/products/groceries.svg", category: "groceries" },
+      { id: "pasta", name: "Pasta", description: "A versatile pantry favorite for easy meals.", price: 4, image: "/images/products/groceries.svg", category: "groceries" },
+      { id: "apples", name: "Fresh apples", description: "Crisp apples, a simple snack for any day.", price: 6, image: "/images/products/groceries.svg", category: "groceries" },
+      { id: "coffee", name: "Ground coffee", description: "A smooth medium roast for your morning cup.", price: 13, image: "/images/products/groceries.svg", category: "groceries" },
+    ];
+    const token = localStorage.getItem("token");
+    const cartKey = "good-things-cart";
+    let cart = readCart();
+    let selectedCategory = "all";
+
+    function readCart() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(cartKey) || "{}");
+        return saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
+      } catch { return {}; }
+    }
+    function saveCart() { localStorage.setItem(cartKey, JSON.stringify(cart)); }
+    function money(value) { return `$${value.toFixed(2)}`; }
+    function renderCategories() {
+      const nav = document.getElementById("categoryNav");
+      nav.replaceChildren();
+      for (const category of categories) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "category-button";
+        button.textContent = category.name;
+        button.setAttribute("aria-pressed", String(category.id === selectedCategory));
+        button.addEventListener("click", () => {
+          selectedCategory = category.id;
+          renderCategories();
+          renderProducts();
+        });
+        nav.append(button);
+      }
+    }
+    function renderProducts() {
+      const grid = document.getElementById("productGrid");
+      const search = document.getElementById("productSearch").value.trim().toLocaleLowerCase();
+      const visibleProducts = products.filter((product) => {
+        const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
+        const matchesSearch = !search || `${product.name} ${product.description}`.toLocaleLowerCase().includes(search);
+        return matchesCategory && matchesSearch;
+      });
+      document.getElementById("resultsLabel").textContent = `${visibleProducts.length} ${visibleProducts.length === 1 ? "item" : "items"}`;
+      grid.replaceChildren();
+      if (!visibleProducts.length) {
+        const empty = document.createElement("p");
+        empty.className = "no-results";
+        empty.textContent = "No items found. Try another search or category.";
+        grid.append(empty);
+      }
+      for (const product of visibleProducts) {
+        const card = document.createElement("article");
+        card.className = "product-card";
+        card.innerHTML = product.image
+          ? `<img class="product-image" loading="lazy" /><h3></h3><p></p><div class="product-bottom"><span class="price"></span><button class="button" type="button">Add to cart</button></div>`
+          : `<div class="product-icon" aria-hidden="true"></div><h3></h3><p></p><div class="product-bottom"><span class="price"></span><button class="button" type="button">Add to cart</button></div>`;
+        if (product.image) {
+          const image = card.querySelector("img");
+          image.src = product.image;
+          image.alt = `${product.name} illustration`;
+        } else {
+          card.querySelector(".product-icon").textContent = product.icon;
+        }
+        card.querySelector("h3").textContent = product.name;
+        card.querySelector("p").textContent = product.description;
+        card.querySelector(".price").textContent = money(product.price);
+        card.querySelector("button").addEventListener("click", () => {
+          cart[product.id] = (cart[product.id] || 0) + 1;
+          saveCart();
+          renderCart();
+        });
+        grid.append(card);
+      }
+    }
+    function renderCart() {
+      const items = document.getElementById("cartItems");
+      items.replaceChildren();
+      let count = 0;
+      let total = 0;
+      const selected = products.filter((product) => Number.isInteger(cart[product.id]) && cart[product.id] > 0);
+      if (!selected.length) {
+        const empty = document.createElement("p");
+        empty.className = "cart-empty";
+        empty.textContent = "Your cart is empty. Add something you like.";
+        items.append(empty);
+      }
+      for (const product of selected) {
+        const quantity = cart[product.id];
+        count += quantity;
+        total += product.price * quantity;
+        const row = document.createElement("div");
+        row.className = "cart-item";
+        row.innerHTML = `<div><div class="cart-item-name"></div><div class="cart-item-price"></div></div><div class="cart-item-price"></div><div class="quantity-controls"><button type="button" aria-label="Remove one"></button><span></span><button type="button" aria-label="Add one"></button><button type="button" aria-label="Remove item" style="margin-left:auto">Remove</button></div>`;
+        row.querySelector(".cart-item-name").textContent = product.name;
+        row.querySelector(".cart-item-price").textContent = `${money(product.price)} each`;
+        row.children[1].textContent = money(product.price * quantity);
+        row.querySelector(".quantity-controls span").textContent = `Qty ${quantity}`;
+        const controls = row.querySelectorAll("button");
+        controls[0].textContent = "−";
+        controls[0].addEventListener("click", () => changeQuantity(product.id, -1));
+        controls[1].textContent = "+";
+        controls[1].addEventListener("click", () => changeQuantity(product.id, 1));
+        controls[2].addEventListener("click", () => { delete cart[product.id]; saveCart(); renderCart(); });
+        items.append(row);
+      }
+      document.getElementById("cartCount").textContent = count;
+      document.getElementById("cartTotal").textContent = money(total);
+    }
+    function changeQuantity(id, delta) {
+      cart[id] = (cart[id] || 0) + delta;
+      if (cart[id] <= 0) delete cart[id];
+      saveCart();
+      renderCart();
+    }
+    async function loadProfile() {
+      if (!token) { window.location.replace("/index.html"); return; }
+      try {
+        const response = await fetch("/api/me", { headers: { Authorization: `Bearer ${token}` } });
+        if (!response.ok) throw new Error("Your session has ended. Please sign in again.");
+        const user = await response.json();
+        document.getElementById("welcomeMsg").textContent = `Hello, ${user.name}. Take a look around.`;
+      } catch (error) {
+        localStorage.removeItem("token");
+        if (error.message !== "Failed to fetch") window.location.replace("/index.html");
+        else document.getElementById("welcomeMsg").textContent = "Could not load your account. Please refresh to try again.";
+      }
+    }
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      try { await fetch("/api/logout", { method: "POST", headers: { Authorization: `Bearer ${token || ""}` } }); } catch { /* Clear the local session even when offline. */ }
+      localStorage.removeItem("token");
+      window.location.replace("/index.html");
+    });
+    document.getElementById("productSearch").addEventListener("input", renderProducts);
+    renderCategories();
+    renderProducts();
+    renderCart();
+    loadProfile();
+  </script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Create account | Good Things</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="auth-page">
+  <main class="auth-card">
+    <p class="brand">Good Things</p>
+    <h1>Create your account</h1>
+    <p class="subheading">A few details and you’re ready to browse.</p>
+    <form id="signupForm">
+      <label for="name">Name</label>
+      <input type="text" id="name" name="name" autocomplete="name" maxlength="100" required />
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" autocomplete="email" required />
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" autocomplete="new-password" minlength="8" required />
+      <button class="button button-full" type="submit" id="signupBtn">Create account</button>
+    </form>
+    <div id="message" class="message" role="status" aria-live="polite"></div>
+    <p class="auth-footer">Already have an account? <a href="/index.html" id="loginLink">Sign in</a></p>
+  </main>
+  <script>
+    const form = document.getElementById("signupForm");
+    const message = document.getElementById("message");
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      message.textContent = "Creating your account…";
+      message.className = "message";
+      try {
+        const response = await fetch("/api/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: form.name.value, email: form.email.value, password: form.password.value }),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || "Sign up failed");
+        window.location.href = "/index.html?created=1";
+      } catch (error) {
+        message.textContent = error.message === "Failed to fetch" ? "Could not connect. Please try again." : error.message;
+        message.className = "message error";
+      }
+    });
+  </script>
+</body>
+</html>
