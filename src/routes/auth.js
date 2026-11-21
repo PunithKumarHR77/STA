@@ -26,6 +26,7 @@ module.exports = ({ store }) => {
     const token = readBearerToken(req);
     if (token) store.deleteSession(token);
     return res.json({ ok: true });
+    console.log("logout called");
   });
   return router;
 };
